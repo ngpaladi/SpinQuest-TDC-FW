@@ -95,3 +95,34 @@ For unattended boot the QSPI U-Boot needs its default env patched to
 power-on line noise otherwise lands in the UART FIFO and aborts autoboot.
 The byte for the longer string comes from truncating the unused
 `bootcmd_usb4` entry — see BOOT-emmc.BIN in the bench notes.
+
+## FPGA gateware + final image composition (updated)
+
+The shipped QSPI image (`BOOT-final.BIN`) includes the PL bitstream: the FSBL
+programs `TDC_64ch_2BRAM.bit` (extracted from the project XSA) into the fabric
+on every boot, before U-Boot runs. Verified from Linux by write/read of the TDC
+BRAM at 0xa0000000 via devmem.
+
+Two corrections to the composition table above, learned the hard way:
+
+- **U-Boot comes from the original working image** (the u-boot partition
+  extracted from `BOOT-v3.BIN`, repackaged as a raw `load=0x8000000` partition),
+  not from AMD's embpf tool. The AMD build's `sf` layer is broken on this DT
+  ("Invalid chip select 0:0"), which also breaks env load; the extracted build
+  has working `sf`, working Ethernet, and mmc distro-boot.
+- **JTAG flashing does not work above ~2 MB** in QSPI boot mode: both Vivado
+  `program_hw_cfgmem` and `program_flash` hang indefinitely on a 9.5 MB image
+  (program_flash even warns the boot mode is unsupported). The working path is
+  the board flashing itself:
+
+```
+# host: docker cp BOOT-final.BIN netboot:/srv/tftpboot/
+# board (U-Boot prompt — temporarily move boot.scr off eMMC p1 to get one):
+tftpboot 0x10000000 BOOT-final.BIN
+sf probe
+sf update 0x10000000 0 ${filesize}
+```
+
+9.5 MB flashes in ~70 s. The `netboot` docker container (built from
+`kernel/netboot/`) is the TFTP server on port 69 and the intended home for
+boot artifacts.

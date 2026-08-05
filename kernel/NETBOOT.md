@@ -72,3 +72,26 @@ booti 0x18000000 0x20000000 0x14000000
 
 Do not `saveenv` — the U-Boot environment offset lives inside the BOOT.BIN
 region of QSPI and writing it corrupts the boot image.
+
+## Flashing to eMMC (standalone boot)
+
+Once netbooted, `kernel/flash_emmc.sh <board-ip>` partitions the K26's onboard
+eMMC over SSH and installs the current build: p1 (512M FAT32) gets `Image`,
+`system.dtb`, and a `boot.scr`; p2 (rest, ext4) gets the rootfs, resized to 4G
+on the host and streamed gzip-compressed into the partition (the target has no
+`mkfs.ext4`, so the filesystem image is written whole). After that the board
+cold-boots from eMMC with no network and no interaction:
+U-Boot's distro-boot finds `/boot.scr` on mmc 0:1 and boots with
+`root=/dev/mmcblk0p2 rw rootwait`.
+
+Two target-side quirks the script works around: busybox applets are not
+symlinked into root's PATH (`busybox fdisk`, `busybox mkfs.vfat`), and
+dropbear has no SFTP, so files stream through `cat` over exec channels. Also
+`echo pw | sudo -S cmd` eats stdin, so anything that pipes data through sudo
+must open device permissions first and write unprivileged.
+
+For unattended boot the QSPI U-Boot needs its default env patched to
+`bootdelay=-2` (skip the abort check entirely, not just zero the delay):
+power-on line noise otherwise lands in the UART FIFO and aborts autoboot.
+The byte for the longer string comes from truncating the unused
+`bootcmd_usb4` entry — see BOOT-emmc.BIN in the bench notes.

@@ -39,3 +39,11 @@ do_install:append() {
 	install -m 0644 ${WORKDIR}/tdc-fpga.service ${D}${systemd_system_unitdir}/tdc-fpga.service
 }
 FILES:${PN} += "${systemd_system_unitdir}"
+
+# UIO device nodes are root-only by default; the DAQ tools in sources/sw/linux
+# run unprivileged with this rule (bench instrument: world-RW is acceptable).
+SRC_URI:append = " file://99-uio.rules"
+do_install:append() {
+	install -d ${D}${sysconfdir}/udev/rules.d
+	install -m 0644 ${WORKDIR}/99-uio.rules ${D}${sysconfdir}/udev/rules.d/99-uio.rules
+}

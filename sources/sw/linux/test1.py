@@ -3,9 +3,10 @@ Test reading from shared memory (AXI BRAM Controller) using UIO device with stan
 '''
 import os  
 import mmap
+from device import find_uio
  
-# Settings
-uio_device = '/dev/uio1'
+# Settings: BRAM 1 resolved by name+address (uio numbering is not stable)
+uio_device = '/dev/uio' + find_uio('axi_bram_ctrl', 0xa0000000)
 uio_size   = 8192
  
 # Open the UIO device

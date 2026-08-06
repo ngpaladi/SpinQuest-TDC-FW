@@ -227,7 +227,8 @@ define build_project =
 		petalinux-create -t apps --template fpgamanager_dtg -n tdc-app --enable \
 		--srcuri "./project-spec/hw-description/system.xsa ../../configs/TDC_64ch_2BRAM/embeddedsw/shell.json" $(OUTPUT_MARKUP)
 	@cd $(ZYNQ_BUILD_PROJECT_PATH) &&\
-		cp ../../configs/TDC_64ch_2BRAM/embeddedsw/tdc-app.bbappend ./project-spec/meta-user/recipes-apps/tdc-app
+		cp ../../configs/TDC_64ch_2BRAM/embeddedsw/tdc-app.bbappend ./project-spec/meta-user/recipes-apps/tdc-app &&\
+		cp ../../configs/TDC_64ch_2BRAM/embeddedsw/tdc-fpga.service ./project-spec/meta-user/recipes-apps/tdc-app/files/
 	@echo "================================================================================" 	$(OUTPUT_MARKUP)
 	@echo "Packaging images"																	$(OUTPUT_MARKUP)
 	@cd $(ZYNQ_BUILD_PROJECT_PATH) &&\

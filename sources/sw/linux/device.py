@@ -268,3 +268,22 @@ class Uio:
     # note: irq is disabled once received.  you need to reenable it                           
     #   - before handling it, if edge-triggered                                               
     #   - after handling it, if level-triggered  
+
+
+# Resolve a /dev/uioN number by device name (and optionally map0 address),
+# since probe order is not stable: on the Krio image the four PS axi-pmon
+# devices claim uio0-3 and shift everything else.
+def find_uio( name, addr=None ):
+    base = Path('/sys/class/uio')
+    for d in sorted( base.iterdir() ):
+        try:
+            if (d/'name').read_text().strip() != name:
+                continue
+            if addr is not None:
+                a = int( (d/'maps/map0/addr').read_text().strip(), 0 )
+                if a != addr:
+                    continue
+            return d.name.replace('uio','')
+        except FileNotFoundError:
+            continue
+    raise FileNotFoundError( f'no uio device named {name!r}' + ( f' at {addr:#x}' if addr else '' ) )

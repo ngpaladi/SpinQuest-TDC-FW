@@ -4,7 +4,7 @@ Read/Write shared memory (AXI BRAM controller) using the device.py classes
 from device import *
 import time 
 
-uio = Uio('1')
+uio = Uio(find_uio('axi_bram_ctrl', 0xa0000000))
 
 region = uio.region(0) 
 

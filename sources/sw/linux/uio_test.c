@@ -10,8 +10,9 @@
 #include <sys/mman.h>
 #include <inttypes.h>
 #include <limits.h>     // CHAR_BIT
+#include "uio_find.h"
 
-#define UIO_DEVICE "/dev/uio1" // Adjust if your BRAM is mapped to a different UIO device
+/* BRAM 1 is resolved at runtime by name+address (uio numbering is not stable) */
 
 // isolate channel from the data word
 unsigned getbits(uint64_t value, unsigned offset, unsigned n);
@@ -30,12 +31,18 @@ unsigned getbits(uint64_t value, unsigned offset, unsigned n) {
 
 int main() {
     int fd;
-    volatile unsigned int *bram_ptr;
+    char uio_dev[32];
+    volatile uint64_t *bram_ptr;
     off_t offset = 0; // Offset within the mapped memory region (usually 0 for BRAM)
     size_t length = 8192; // Size of the BRAM in bytes (e.g., 8KB)
 
     // Open the UIO device
-    fd = open(UIO_DEVICE, O_RDWR);
+    if (uio_find("axi_bram_ctrl", 0xa0000000UL, uio_dev, sizeof uio_dev)) {
+        fprintf(stderr, "no axi_bram_ctrl uio device found\n");
+        return 1;
+    }
+    printf("Using %s\n", uio_dev);
+    fd = open(uio_dev, O_RDWR);
     if (fd < 0) {
         perror("Failed to open UIO device");
         return 1;
@@ -61,11 +68,8 @@ int main() {
         unsigned fineTime   = getbits(bram1_data, 6, 5);                                               
         unsigned coarseTime = getbits(bram1_data, 11, 28);                                             
                                                                                                        
-        uint64_t data = bram_ptr[i];                                                                   
-        //uint64_t data1 = bram_ptr[i];                                                                
-        //uint64_t data2 = bram_ptr[i+1];                                                              
-        //printf("%#018"PRIx64"\n", data);                                                             
-        printf("Read data: 0x%llx%llx\n", data1, data2);                                               
+        printf("Address %d: %#018"PRIx64",\tCoarse time: %u,\tFine time: %u,\tChannel ID: %u\n",
+               i, bram1_data, coarseTime, fineTime, channelID);                                               
                                                                                                        
         //printf("Address %d: 0x%"PRIx64",\t\tCoarse time: %u,\t\tFine time: %u,\t\tChannel ID: %u\n\r",i,bram1_data,coarseTime,fineTime,channelID);
                                                                                                                                                     

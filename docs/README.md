@@ -5,29 +5,25 @@ composition, device tree requirements, networking, the DAQ interface, PCIe statu
 errata and runbooks. It is a single self-contained file with no external assets, so it
 renders correctly from a local checkout as well as from Pages.
 
-## Publishing (no workflow needed)
+## Publishing
 
-The simplest route needs nothing but a repository setting:
+Pages is configured to deploy this folder directly, with no build step or workflow:
 
     Settings -> Pages -> Build and deployment
       Source: Deploy from a branch
-      Branch: master (or this branch)   Folder: /docs
+      Branch: krio-ethernet-netboot    Folder: /docs
 
-The site then appears at `https://<owner>.github.io/SpinQuest-TDC-FW/` and updates on
-every push. `.nojekyll` keeps Jekyll from touching the HTML.
+Every push to that branch rebuilds the site, usually within a minute. `.nojekyll`
+keeps Jekyll from touching the HTML.
 
-## Publishing via Actions (optional)
+**NOTE:** the account has a verified custom domain, so the site is served at
+<https://www.noahpaladino.com/SpinQuest-TDC-FW/> rather than at `github.io`. The
+`github.io` address still resolves and redirects. This repository is public, so the
+page is public — worth remembering before adding anything you would not put on a
+public site.
 
-If you would rather deploy through Actions — useful later if the docs grow a build
-step — move the provided workflow into place and set the source accordingly:
-
-    mkdir -p .github/workflows
-    git mv docs/pages-workflow.yml .github/workflows/pages.yml
-
-    Settings -> Pages -> Build and deployment -> Source: GitHub Actions
-
-**NOTE:** pushing a file under `.github/workflows/` requires a token with `workflow`
-scope, which is why it ships here rather than already installed.
+Once this branch merges, change **Branch** to `master` in the same setting. Nothing
+else needs to move.
 
 ## Editing
 

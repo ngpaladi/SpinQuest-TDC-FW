@@ -20,6 +20,13 @@
 *       - close fds
 *   - lower PS -> PL busy flag
 *
+* Data is sent over TWO TCP connections, one per BRAM. With the two GEMs
+* LACP-bonded, 802.3ad hashes per flow (use xmit_hash_policy=layer3+4), so a
+* single connection would be pinned to one slave and capped at ~1 Gbps no
+* matter how the switch is configured. Two connections give the hash something
+* to spread, and the mapping is free: the PL already ping-pongs between BRAMs,
+* so BRAM1 -> socket 0 and BRAM2 -> socket 1 alternates the links naturally.
+* Without a bond this is still correct - both flows just share one interface.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,8 +56,8 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-    // Networking
-    int sockfd, portno, n;
+    // Networking: one socket per BRAM (see header comment)
+    int sockfd[2], portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -94,11 +101,6 @@ int main(int argc, char *argv[])
        exit(0);
     }
     portno = atoi(argv[2]);
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-        error("ERROR opening socket");
-    else
-        printf("Successfully opened socket\n");
     server = gethostbyname(argv[1]);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
@@ -106,14 +108,18 @@ int main(int argc, char *argv[])
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
+    bcopy((char *)server->h_addr,
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-    else 
-        printf("Successfully connected to socket\n");
+    for (int i = 0; i < 2; i++) {
+        sockfd[i] = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd[i] < 0)
+            error("ERROR opening socket");
+        if (connect(sockfd[i], (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+            error("ERROR connecting");
+        printf("Connected socket %d (BRAM %d)\n", i, i + 1);
+    }
 
     // Open the TDC interrupt UIO device
     uio_intr_fd = open(UIO_INTR, O_RDWR);
@@ -211,7 +217,7 @@ int main(int argc, char *argv[])
         for (int i=0; i<250; i+=1) {
             uint64_t bram_data = uio_bram_ptr[i];
             printf("%#018"PRIx64"\n", bram_data);
-            n = write(sockfd, &bram_data, sizeof(bram_data));
+            n = write(sockfd[which_bram == 1 ? 0 : 1], &bram_data, sizeof(bram_data));
             if (n < 0)
                 error("ERROR writing to socket");
         }

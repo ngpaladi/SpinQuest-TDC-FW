@@ -1,0 +1,569 @@
+<title>KrIO Rev 4 — TDC DAQ Reference</title>
+<style>
+  :root {
+    --paper:      #f7f8f7;
+    --surface:    #ffffff;
+    --rule:       #d3dad9;
+    --rule-soft:  #e6eae9;
+    --ink:        #12171a;
+    --ink-2:      #47555a;
+    --ink-3:      #6f7d82;
+    --accent:     #0b6e75;
+    --accent-bg:  #e3efef;
+    --bad:        #a32b22;
+    --bad-bg:     #f6e5e3;
+    --warn:       #8a5a00;
+    --warn-bg:    #f7edda;
+    --good:       #1b6b4a;
+    --good-bg:    #e2efe8;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1315; --surface: #161d1f; --rule: #2b3639; --rule-soft: #202a2c;
+      --ink: #e4ecec; --ink-2: #a3b2b4; --ink-3: #7d8d90;
+      --accent: #4fb8bd; --accent-bg: #12292c;
+      --bad: #e8837a; --bad-bg: #2c1a18;
+      --warn: #d8a33f; --warn-bg: #2a2113;
+      --good: #64c39a; --good-bg: #12271f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0e1315; --surface: #161d1f; --rule: #2b3639; --rule-soft: #202a2c;
+    --ink: #e4ecec; --ink-2: #a3b2b4; --ink-3: #7d8d90;
+    --accent: #4fb8bd; --accent-bg: #12292c;
+    --bad: #e8837a; --bad-bg: #2c1a18;
+    --warn: #d8a33f; --warn-bg: #2a2113;
+    --good: #64c39a; --good-bg: #12271f;
+  }
+  :root[data-theme="light"] {
+    --paper: #f7f8f7; --surface: #ffffff; --rule: #d3dad9; --rule-soft: #e6eae9;
+    --ink: #12171a; --ink-2: #47555a; --ink-3: #6f7d82;
+    --accent: #0b6e75; --accent-bg: #e3efef;
+    --bad: #a32b22; --bad-bg: #f6e5e3;
+    --warn: #8a5a00; --warn-bg: #f7edda;
+    --good: #1b6b4a; --good-bg: #e2efe8;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 15.5px; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---- masthead ---- */
+  header.mast { border-bottom: 2px solid var(--ink); padding: 40px 0 18px; margin-bottom: 34px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--mono); font-weight: 600; font-size: clamp(26px, 4.4vw, 40px);
+    letter-spacing: -.01em; margin: 0 0 10px; text-wrap: balance; line-height: 1.15;
+  }
+  .lede { color: var(--ink-2); max-width: 66ch; margin: 0 0 22px; font-size: 16.5px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 28px; font-family: var(--mono);
+    font-size: 12px; color: var(--ink-3); letter-spacing: .04em;
+  }
+  .meta b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- layout ---- */
+  .cols { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 56px; align-items: start; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; gap: 0; } nav.toc { position: static; margin-bottom: 40px; } }
+
+  nav.toc { position: sticky; top: 24px; font-family: var(--mono); font-size: 12px; }
+  nav.toc .toc-head {
+    text-transform: uppercase; letter-spacing: .16em; color: var(--ink-3);
+    padding-bottom: 8px; border-bottom: 1px solid var(--rule); margin-bottom: 10px; font-size: 10.5px;
+  }
+  nav.toc a {
+    display: block; padding: 5px 0; color: var(--ink-2); text-decoration: none;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); }
+  nav.toc a .num { color: var(--ink-3); margin-right: 9px; }
+
+  section { margin-bottom: 52px; scroll-margin-top: 24px; }
+  h2 {
+    font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: .14em;
+    color: var(--ink); margin: 0 0 4px; padding-bottom: 9px; border-bottom: 1px solid var(--ink);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+  }
+  h2 .idx { color: var(--accent); font-weight: 400; }
+  .sub { color: var(--ink-2); margin: 14px 0 20px; max-width: 68ch; }
+  h3 {
+    font-family: var(--mono); font-size: 13.5px; font-weight: 600; margin: 30px 0 8px;
+    letter-spacing: .01em; color: var(--ink);
+  }
+  p { max-width: 68ch; }
+  a { color: var(--accent); }
+
+  /* ---- tables ---- */
+  .scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--rule); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--ink-3); background: var(--paper); border-bottom: 1px solid var(--rule); white-space: nowrap;
+  }
+  tr:last-child td { border-bottom: 0; }
+  td.m, th.m, .m { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---- status pills ---- */
+  .pill {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .09em;
+    text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; white-space: nowrap;
+  }
+  .p-good { color: var(--good); background: var(--good-bg); }
+  .p-bad  { color: var(--bad);  background: var(--bad-bg); }
+  .p-warn { color: var(--warn); background: var(--warn-bg); }
+  .p-info { color: var(--accent); background: var(--accent-bg); }
+
+  /* ---- code ---- */
+  pre {
+    font-family: var(--mono); font-size: 12.8px; line-height: 1.55; background: var(--surface);
+    border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    padding: 13px 16px; overflow-x: auto; margin: 14px 0; color: var(--ink);
+  }
+  code { font-family: var(--mono); font-size: .9em; background: var(--rule-soft); padding: 1px 5px; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  /* ---- callout ---- */
+  .note {
+    border: 1px solid var(--rule); border-left: 3px solid var(--warn);
+    background: var(--surface); padding: 14px 16px; margin: 18px 0;
+  }
+  .note.stop { border-left-color: var(--bad); }
+  .note.ok { border-left-color: var(--good); }
+  .note .tag {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--warn); display: block; margin-bottom: 5px;
+  }
+  .note.stop .tag { color: var(--bad); }
+  .note.ok .tag { color: var(--good); }
+  .note p { margin: 0; max-width: 66ch; }
+  .note p + p { margin-top: 9px; }
+
+  /* ---- errata entries ---- */
+  .err { border-top: 1px solid var(--rule); padding: 18px 0 4px; }
+  .err-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .err-id { font-family: var(--mono); font-weight: 600; font-size: 14px; color: var(--ink); }
+  .err-title { font-weight: 600; }
+
+  /* ---- bitfield ---- */
+  .bits { display: flex; margin: 18px 0 6px; border: 1px solid var(--rule); overflow: hidden; }
+  .bits div {
+    padding: 9px 10px; font-family: var(--mono); font-size: 11.5px; text-align: center;
+    border-right: 1px solid var(--rule); background: var(--surface);
+  }
+  .bits div:last-child { border-right: 0; }
+  .bits .lbl { display: block; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px; }
+  .b-coarse { flex: 28; color: var(--accent); }
+  .b-fine   { flex: 5; color: var(--warn); }
+  .b-chan   { flex: 6; color: var(--good); }
+
+  ul.tight { max-width: 68ch; padding-left: 20px; }
+  ul.tight li { margin-bottom: 6px; }
+  .foot { border-top: 1px solid var(--rule); margin-top: 60px; padding-top: 18px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">SpinQuest TDC · Field Reference &amp; Errata</p>
+  <h1>KrIO Rev 4 Carrier — Kria K26 DAQ</h1>
+  <p class="lede">This is the bring-up reference for the 64-channel TDC on the KrIO carrier: how
+  the board boots, how the parts are wired, and which failure modes are silent. Everything here
+  was measured on a running board rather than inferred from a datasheet, and where a mechanism is
+  inferred rather than proven, it says so.</p>
+  <div class="meta">
+    <span><b>SOM</b> Kria K26 · XCK26</span>
+    <span><b>Carrier</b> KrIO Rev 4</span>
+    <span><b>OS</b> PetaLinux 2022.1 · kernel 5.15.19</span>
+    <span><b>Updated</b> 2026-08-07</span>
+  </div>
+</header>
+
+<div class="cols">
+  <nav class="toc">
+    <div class="toc-head">Contents</div>
+    <a href="#state"><span class="num">01</span>Board state</a>
+    <a href="#boot"><span class="num">02</span>Boot image</a>
+    <a href="#dt"><span class="num">03</span>Device tree</a>
+    <a href="#net"><span class="num">04</span>Networking</a>
+    <a href="#daq"><span class="num">05</span>DAQ interface</a>
+    <a href="#pcie"><span class="num">06</span>PCIe endpoint</a>
+    <a href="#errata"><span class="num">07</span>Errata</a>
+    <a href="#run"><span class="num">08</span>Runbooks</a>
+    <a href="#rules"><span class="num">09</span>House rules</a>
+  </nav>
+
+  <main>
+
+  <!-- 01 -->
+  <section id="state">
+    <h2><span>Board state</span><span class="idx">01</span></h2>
+    <p class="sub">A cold power-up lands at a login prompt with the fabric programmed and both
+    network ports up, needing no keyboard and no network. The stages below are what gets you
+    there, in the order they run.</p>
+    <div class="scroll"><table>
+      <tr><th>Stage</th><th>Contents</th><th class="m">Status</th></tr>
+      <tr><td class="m">QSPI</td><td>FSBL + PMUFW + BL31 + patched DTB + U-Boot (1.7 MB)</td><td><span class="pill p-good">verified</span></td></tr>
+      <tr><td class="m">eMMC p1</td><td>FAT32 · <code>Image</code>, <code>system.dtb</code>, <code>boot.scr</code></td><td><span class="pill p-good">verified</span></td></tr>
+      <tr><td class="m">eMMC p2</td><td>ext4 root, 13.5 GB, persistent</td><td><span class="pill p-good">verified</span></td></tr>
+      <tr><td class="m">PL fabric</td><td>TDC bitstream, loaded at boot by <code>tdc-fpga.service</code> (134 ms)</td><td><span class="pill p-good">verified</span></td></tr>
+      <tr><td class="m">Ethernet</td><td>2 × 1 GbE, factory MACs, 0.94 Gbps/port measured</td><td><span class="pill p-good">verified</span></td></tr>
+      <tr><td class="m">PCIe EP</td><td>Endpoint configured; link stalls in Detect/Polling</td><td><span class="pill p-bad">blocked</span></td></tr>
+    </table></div>
+    <p>Log in as <code>petalinux</code> with the password set on first boot. SSH is enabled and
+    each port takes its own DHCP lease, so the board is reachable on either one.</p>
+  </section>
+
+  <!-- 02 -->
+  <section id="boot">
+    <h2><span>Boot image composition</span><span class="idx">02</span></h2>
+    <p class="sub">The boot image is assembled from more than one source, and the mix matters.
+    Substituting either the FSBL or U-Boot for the one you would reach for first produces an image
+    that boots to complete silence — no banner, no error — so it is worth understanding why each
+    partition comes from where it does.</p>
+    <div class="scroll"><table>
+      <tr><th>Partition</th><th>Source</th><th>Why this one</th></tr>
+      <tr><td class="m">FSBL</td><td>This project's PetaLinux build</td><td>Programs the KrIO pinmux. AMD's stock K26 FSBL programs the KV260 pinmux (GEM3) and silently kills MDIO.</td></tr>
+      <tr><td class="m">PMUFW, BL31</td><td>This project's build</td><td>—</td></tr>
+      <tr><td class="m">DTB <span class="m">@0x100000</span></td><td>This project, patched</td><td>U-Boot reads its control DTB from here.</td></tr>
+      <tr><td class="m">U-Boot</td><td>Extracted from the original working image</td><td>Has a working <code>sf</code> layer. The PetaLinux-built U-Boot honours <code>stdout-path = serial1</code> → <code>/dcc</code> and prints to the JTAG debug channel — it runs fine and looks dead.</td></tr>
+      <tr><td class="m">Bitstream</td><td>Loaded at runtime by Linux</td><td>Keeps the QSPI image under the ~2 MB JTAG ceiling; new firmware is a file copy, never a reflash.</td></tr>
+    </table></div>
+
+    <div class="note stop">
+      <span class="tag">JTAG ceiling</span>
+      <p>Vivado's <code>program_hw_cfgmem</code> and Xilinx's <code>program_flash</code> both
+      hang indefinitely on images larger than roughly 2 MB when the board is in QSPI boot mode.
+      Rather than fight this, we keep the QSPI image small and let the board flash itself over
+      TFTP, which writes 9.5 MB in about 70 seconds. JTAG stays as the recovery path.</p>
+    </div>
+    <pre><code>tftpboot 0x10000000 BOOT.BIN
+sf probe
+sf update 0x10000000 0 ${filesize}</code></pre>
+  </section>
+
+  <!-- 03 -->
+  <section id="dt">
+    <h2><span>Device tree requirements</span><span class="idx">03</span></h2>
+    <p class="sub">Two independent device-tree bugs kept both Ethernet ports dead for a long
+    time. They fail in different places for different reasons, and neither prints anything useful,
+    so read this before editing the PHY nodes.</p>
+
+    <h3>Both delay properties are mandatory</h3>
+    <p>With <code>phy-mode = "rgmii-id"</code>, <code>dp83867_of_init()</code> treats both
+    <code>ti,rx-internal-delay</code> and <code>ti,tx-internal-delay</code> as required, and
+    returns an error if either is absent. It reports that failure through <code>pr_debug()</code>,
+    which is compiled out of a normal build, so nothing reaches the console. U-Boot simply says
+    <code>No ethernet found</code> and Linux says <code>Could not attach PHY (-19)</code>.</p>
+
+    <h3>The PHY ID compatible must come first</h3>
+    <p>Linux's <code>fwnode_get_phy_id()</code> reads only the <em>first</em> compatible string.
+    If that string does not parse as <code>ethernet-phy-idNNNN.NNNN</code>, the node is registered
+    as a plain <code>mdio_device</code> rather than a <code>phy_device</code>, and macb finds
+    nothing behind the phandle. Putting the ID string first is the whole fix.</p>
+    <pre><code>phy0: phy@0 {
+    compatible = "ethernet-phy-id2000.a231", "ti,dp83867";  /* ID first */
+    reg = &lt;0x0&gt;;
+    ti,rx-internal-delay = &lt;0x8&gt;;   /* 2.25 ns — both mandatory */
+    ti,tx-internal-delay = &lt;0x8&gt;;
+    ti,fifo-depth = &lt;0x1&gt;;
+};</code></pre>
+
+    <h3>Why 8</h3>
+    <p>We picked the delay value by measurement rather than copying a reference design. Sweeping
+    <code>ti,tx-internal-delay</code> across its range on this board, pinging the gateway at each
+    setting, gives a clear plateau:</p>
+    <div class="scroll"><table>
+      <tr><th class="m">Value</th><th class="m">0</th><th class="m">2</th><th class="m">4</th><th class="m">8</th><th class="m">10</th><th class="m">12</th><th class="m">14</th></tr>
+      <tr><td class="m">Delay</td><td class="m">0.25 ns</td><td class="m">0.75</td><td class="m">1.25</td><td class="m">2.25</td><td class="m">2.75</td><td class="m">3.25</td><td class="m">3.75</td></tr>
+      <tr><td class="m">Result</td>
+        <td><span class="pill p-bad">fail</span></td><td><span class="pill p-bad">fail</span></td>
+        <td><span class="pill p-good">pass</span></td><td><span class="pill p-good">pass</span></td>
+        <td><span class="pill p-good">pass</span></td><td><span class="pill p-good">pass</span></td>
+        <td><span class="pill p-good">pass</span></td></tr>
+    </table></div>
+    <p>Ten of sixteen settings pass, so 8 sits comfortably mid-window. That width is worth
+    noting on its own: it says the RGMII routing has real timing margin, because a marginal board
+    gives you one lucky value rather than a plateau. Two other things agree with the choice — the
+    DP83867 powers up at <code>RGMIIDCTL = 0x77</code> (2.00 ns), one step away, and
+    <code>STRAP_STS2</code> reads <code>0x0100</code> on both PHYs, meaning the board straps no
+    skew override and the value has to come from the device tree.</p>
+
+    <h3>PHY addresses are 0 and 5</h3>
+    <p>Not 0 and 1, whatever the schematic says. We confirmed this three independent ways: a
+    full 0–31 MDIO scan, U-Boot's own probe, and each PHY's latched
+    <code>STRAP_STS1[4:0]</code> register. Both PHYs sit on GEM1's MDIO bus (MIO76 and MIO77), and
+    GEM2 reaches its PHY across that same bus — which is why the <code>mdio</code> node belongs
+    under <code>&amp;gem1</code>, not <code>&amp;gem2</code>.</p>
+  </section>
+
+  <!-- 04 -->
+  <section id="net">
+    <h2><span>Networking</span><span class="idx">04</span></h2>
+    <p class="sub">Both ports run at line rate, so the SoC is not the limiting factor. Getting
+    more than one port's worth of throughput out of a board, however, takes more than enabling
+    bonding.</p>
+    <div class="scroll"><table>
+      <tr><th>Measurement</th><th class="m">Result</th><th>Conditions</th></tr>
+      <tr><td>Single port, TCP</td><td class="m">0.94 Gbps</td><td>64 KB writes, 8 s, board → host</td></tr>
+      <tr><td>Link negotiation</td><td class="m">1000 / full</td><td>both ports, U-Boot and Linux</td></tr>
+      <tr><td>Per-board ceiling</td><td class="m">~1.88 Gbps</td><td>both links busy</td></tr>
+    </table></div>
+
+    <h3>Aggregation has two traps</h3>
+    <p><strong>Per-flow hashing.</strong> 802.3ad assigns each flow to one slave, so a single TCP
+    connection is capped at one link's rate no matter how the switch is configured. To get past
+    that you need more than one flow, so the DAQ daemon opens one connection per BRAM. The mapping
+    is free: the PL already ping-pongs between the two buffers, so the traffic alternates between
+    the links on its own.</p>
+    <p><strong>Silent option fallback.</strong> Passing <code>xmit_hash_policy</code> and
+    <code>lacp_rate</code> to <code>ip link add</code> does nothing on this kernel — the bond comes
+    up <code>layer2</code> and <code>slow</code> regardless. That is a quiet halving of your
+    bandwidth, because <code>layer2</code> hashes on MAC addresses alone, so every flow to the same
+    server lands on the same slave and the second port carries nothing at all.
+    <strong>NOTE:</strong> write these through sysfs after creating the bond and read them back to
+    confirm. <code>bond-setup.sh</code> does both.</p>
+
+    <div class="note stop">
+      <span class="tag">Do not bond into an unconfigured switch</span>
+      <p>With no LACP partner configured on the switch, the bond still comes up and still passes
+      some traffic, which makes this easy to miss. But both slaves then transmit with the same MAC
+      on two different switch ports, the switch sees that MAC flapping, and it starts dropping. In
+      testing, traffic left the board fine while nothing could reach it, and SSH connected once
+      before dying. That is worse than not bonding at all, which is why we leave the bond opt-in
+      per board rather than bringing it up at boot.</p>
+      <p>Confirm before relying on it — you want a non-zero partner and two ports:</p>
+    </div>
+    <pre><code>grep -E 'Partner Mac|Number of ports' /proc/net/bonding/bond0</code></pre>
+  </section>
+
+  <!-- 05 -->
+  <section id="daq">
+    <h2><span>DAQ interface</span><span class="idx">05</span></h2>
+    <p class="sub">Every memory-mapped block in the PL is exposed to userspace as a UIO device,
+    so the readout software maps device memory with <code>mmap()</code> and handles interrupts with
+    <code>read()</code> directly on the device node. No custom kernel driver is needed, which is
+    the whole point of the arrangement.</p>
+    <div class="scroll"><table>
+      <tr><th>Function</th><th class="m">Address</th><th class="m">UIO name</th><th>Notes</th></tr>
+      <tr><td>BRAM 1</td><td class="m">0xa0000000</td><td class="m">axi_bram_ctrl</td><td>8 KB · 1024 × 64-bit words</td></tr>
+      <tr><td>BRAM 2</td><td class="m">0xa0002000</td><td class="m">axi_bram_ctrl</td><td>ping-pong partner</td></tr>
+      <tr><td>READ_BUSY</td><td class="m">0xa0010000</td><td class="m">gpio</td><td>PS → PL busy flag</td></tr>
+      <tr><td>WHICH_BRAM</td><td class="m">0xa0020000</td><td class="m">gpio</td><td>PL → PS buffer select</td></tr>
+      <tr><td>TDC interrupt</td><td class="m">—</td><td class="m">tdc_int</td><td>IRQ only, no memory map</td></tr>
+    </table></div>
+
+    <div class="note">
+      <span class="tag">Resolve by name, never by number</span>
+      <p><strong>NOTE:</strong> UIO numbering is not stable. The four PS <code>axi-pmon</code>
+      devices claim <code>uio0</code> through <code>uio3</code>, so any hard-coded
+      <code>/dev/uioN</code> path silently points your tool at a performance monitor instead of a
+      BRAM. Match on <code>/sys/class/uio/*/name</code>, plus <code>maps/map0/addr</code> to tell
+      the two BRAM controllers apart.</p>
+    </div>
+
+    <h3>Data word</h3>
+    <p>Each 64-bit BRAM word carries one hit:</p>
+    <div class="bits">
+      <div class="b-coarse"><span class="lbl">Coarse time</span>bits 38:11</div>
+      <div class="b-fine"><span class="lbl">Fine</span>10:6</div>
+      <div class="b-chan"><span class="lbl">Channel</span>5:0</div>
+    </div>
+    <p>Trigger and hit inputs arrive on PMOD1 — pin 1 is hit, pin 3 is trigger.</p>
+
+    <h3>Readout sequence</h3>
+    <ul class="tight">
+      <li>Block on <code>read()</code> from the <code>tdc_int</code> UIO device</li>
+      <li>Raise READ_BUSY, read WHICH_BRAM to learn which buffer is full</li>
+      <li>Stream that BRAM out on the socket bound to it</li>
+      <li>Lower READ_BUSY and re-arm the interrupt</li>
+    </ul>
+    <p>UIO nodes are world-accessible via a shipped udev rule, so the daemon runs unprivileged.</p>
+  </section>
+
+  <!-- 06 -->
+  <section id="pcie">
+    <h2><span>PCIe endpoint</span><span class="idx">06</span></h2>
+    <p class="sub">The card is a PS-PCIe endpoint by design: acquisition data buffers in the 4 GB
+    of PS DDR4 before moving to the host, which is what the PS controller is good at. J4 is wired
+    to the PS-GTR lanes and carries no GTH nets, so the PL transceivers are not an option without a
+    board respin.</p>
+
+    <p>Every firmware precondition checks out on hardware and the link still does not come up.
+    It is not hung, though, which took a while to establish — it cycles:</p>
+    <pre><code>3000 samples of LTSSM (0xFD480228) across a host retrain
+
+  2916   0x04   state 0   Detect.Quiet
+    84   0x14   state 2   Polling.Active</code></pre>
+    <p>Read that as a sequence: the card detects a receiver, enters Polling, transmits TS1
+    ordered sets, gets no reply, times out, and falls back to Detect — about 3 % duty cycle. Link
+    training can be forced, which is how we got the measurement: toggling
+    <code>pcie_ctrl_reset</code> (RST_FPD_TOP bit 17) is a PERST equivalent, and doing that while
+    the host retrains its root port produces the excursions above.</p>
+
+    <div class="scroll"><table>
+      <tr><th>Check</th><th class="m">Register</th><th class="m">Value</th><th class="m">Verdict</th></tr>
+      <tr><td>Core clock</td><td class="m">0xFD1A00B4</td><td class="m">0x01000200</td><td><span class="pill p-good">ok</span></td></tr>
+      <tr><td>Lane 0 PLL lock</td><td class="m">0xFD4023E4</td><td class="m">0x38</td><td><span class="pill p-good">locked</span></td></tr>
+      <tr><td>Lane protocol mux</td><td class="m">0xFD410010/14</td><td class="m">0x11 / 0x11</td><td><span class="pill p-good">all PCIe</span></td></tr>
+      <tr><td>Resets released</td><td class="m">0xFD1A0100</td><td class="m">bits 17–19 clear</td><td><span class="pill p-good">ok</span></td></tr>
+      <tr><td>Endpoint attributes</td><td class="m">0xFD4800xx</td><td class="m">port type 0</td><td><span class="pill p-good">EP</span></td></tr>
+      <tr><td>LTSSM hold</td><td class="m">0xFD480314</td><td class="m">0x0</td><td><span class="pill p-good">not held</span></td></tr>
+      <tr><td>Link status</td><td class="m">0xFD480238</td><td class="m">0x2</td><td><span class="pill p-bad">down (0x3 = up)</span></td></tr>
+    </table></div>
+    <p>Nothing remains to enable in software. It is worth recording that
+    <code>zynqmp-pspcie-epdma</code> is <em>not</em> the missing piece either — it is a host-side
+    DMA and PIO datapath driver, and does no link bring-up. The remaining explanation is
+    <a href="#errata">E3</a>.</p>
+  </section>
+
+  <!-- 07 -->
+  <section id="errata">
+    <h2><span>Errata</span><span class="idx">07</span></h2>
+    <p class="sub">Three confirmed issues, followed by the things bring-up explicitly cleared.
+    The second list is worth as much as the first: several of those were suspected at length, and
+    recording that they are fine saves the next person from re-deriving it.</p>
+
+    <div class="err">
+      <div class="err-head"><span class="err-id">E1</span><span class="err-title">PHY address annotation is wrong (sheet 2/14)</span><span class="pill p-warn">docs</span></div>
+      <p>The schematic annotates Ethernet B as <code>ADDR = 0x1</code>, but the silicon straps to
+      <code>0x5</code>. The DP83867 uses 4-level straps, where RX_D0 sets PHY_AD[1:0] and RX_D2
+      sets PHY_AD[3:2], so a single divider does not encode a single address bit. Harmless
+      electrically; expensive in debugging time. The KiCad source should be corrected.</p>
+    </div>
+
+    <div class="err">
+      <div class="err-head"><span class="err-id">E2</span><span class="err-title">Strap divider R13/R14 has no BOM values</span><span class="pill p-warn">docs</span></div>
+      <p>The Ethernet B RX_D2 strap divider carries no value in the BOM or netlist — both show a
+      bare <code>R</code>. Parts are clearly fitted, since the address reads back as 0x5, but the
+      design files do not record what they are, which makes the board unbuildable from source as
+      it stands.</p>
+    </div>
+
+    <div class="err">
+      <div class="err-head"><span class="err-id">E3</span><span class="err-title">PCIe TX pairs are not AC-coupled</span><span class="pill p-bad">blocking</span></div>
+      <p>The card's transmit pairs (<code>GTR_DPn_M2C</code>, reaching J4 B14/B15 and the
+      equivalent pins on the other lanes — the CEM <em>PER</em> pins) run direct with no series
+      capacitors, while C15–C22 sit on the receive pairs where the host already provides coupling.
+      UG1091 states that the K26 SOM adds no capacitors to the PS-GTR data lanes, and the PCIe CEM
+      spec assigns transmit-side coupling to the add-in card. So these caps are ours to provide,
+      and they are on the wrong pairs.</p>
+      <p>Mechanism consistent with the LTSSM evidence: a DC-coupled transmit pair drives the
+      card's common-mode voltage straight into a host receiver that has no capacitor of its own,
+      putting it outside its common-mode range so it cannot recover the bit stream. The card
+      talks, the host cannot hear it, Polling times out.</p>
+      <p><strong>Minimal test:</strong> fit 100 nF (0402) in series on the lane 0 transmit pair
+      at J4 B14/B15 — two capacitors, enough for an x1 link. The prediction is specific enough to
+      be wrong: the Polling.Active fraction should go from 3 % to 100 % and carry on through
+      Configuration to L0. If it keeps cycling at 3 %, the transmit path is not the problem and the
+      host-side adapter is the next suspect.</p>
+    </div>
+
+    <h3>Cleared during bring-up</h3>
+    <ul class="tight">
+      <li><strong>RGMII layout</strong> — ten of sixteen delay settings pass; wide margin</li>
+      <li><strong>GTR pin mapping</strong> — M2C→PET, C2M→PER, refclk on A13/A14, all per CEM</li>
+      <li><strong>MDIO topology</strong> — shared GEM1 bus works as designed</li>
+      <li><strong>PHY part</strong> — DP83867 as drawn (ID 0x2000A231); early configs naming DP83869 were a software error</li>
+      <li><strong>JTAG header</strong> — an early hardware-fault theory was wrong; the issue was tooling</li>
+      <li><strong>QSPI, eMMC, power chain</strong> — repeated unattended cold boots, all solid</li>
+    </ul>
+
+    <h3>Open observation — warm reset</h3>
+    <p>Warm reset hangs the board, reproducibly. We verified this with continuous serial capture:
+    issuing <code>reset</code> from U-Boot, with the PL never loaded and Linux never run, prints
+    <code>resetting ...</code> and then dies before any BootROM, FSBL or U-Boot output appears.
+    Only a power cycle recovers it, and cold boots are entirely reliable.</p>
+    <p>The mechanism that fits every observation is that the boot-time QSPI driver leaves the
+    flash in a volatile non-power-on state — 4-byte addressing, quad protocol, or both — which the
+    BootROM does not expect on a warm reset. The same state explains why U-Boot's
+    <code>sf probe</code> returns garbage JEDEC IDs. A candidate fix is patching the FSBL to issue
+    a flash software reset after loading; until someone does, treat warm reset as unsupported.</p>
+  </section>
+
+  <!-- 08 -->
+  <section id="run">
+    <h2><span>Runbooks</span><span class="idx">08</span></h2>
+
+    <h3>Build</h3>
+    <p>The canonical build environment is the PetaLinux 2022.1 container on the build host. The
+    XSA is not tracked in git, so drop it at
+    <code>Projects/vivado/TDC_64ch_2BRAM/TDC_64ch_2BRAM.xsa</code> before you start. Worth knowing:
+    PetaLinux 2022.1 accepts a Vivado 2025.2 XSA without complaint, so the tool versions do not
+    have to match.</p>
+    <pre><code>docker run --rm -v $HOME/SpinQuest-TDC-FW:/work -w /work/kernel \
+  -u 1005:1005 -e HOME=/home/petalinux \
+  -e BUILD_PETALINUX_ROOT=/opt/Xilinx/petalinux \
+  --entrypoint /bin/bash docker_petalinux2:2022.1-04191534 -lc "make build"</code></pre>
+    <p>All of the device-tree and kernel fixes described above live under
+    <code>kernel/configs/TDC_64ch_2BRAM/</code> and are copied into the generated project by the
+    Makefile, so a fresh <code>make build</code> produces a correct image with no manual steps.
+    That is deliberate — nobody should need to know this document's history to get a working
+    board.</p>
+
+    <h3>Netboot</h3>
+    <p>Serve <code>Image</code>, <code>system.dtb</code> and the ramdisk over TFTP, then:</p>
+    <pre><code>setenv ethact ethernet@ff0c0000
+setenv ipaddr 192.168.0.180
+setenv serverip &lt;host&gt;
+tftpboot 0x18000000 Image
+tftpboot 0x14000000 system.dtb
+tftpboot 0x20000000 rootfs.cpio.gz.u-boot
+setenv bootargs console=ttyPS1,115200 earlycon clk_ignore_unused \
+    uio_pdrv_genirq.of_id=generic-uio,ui_pdrv cma=900M
+booti 0x18000000 0x20000000 0x14000000</code></pre>
+    <p><strong>NOTE:</strong> serve these from a machine with a wired path to the board's switch.
+    U-Boot's TCP stack does not survive a lossy Wi-Fi hop on a transfer the size of the rootfs; it
+    fails part-way with <code>queue overrun</code> or a retry-count timeout.</p>
+
+    <h3>Install to eMMC</h3>
+    <p>Netboot the board first, then run <code>kernel/flash_emmc.sh &lt;board-ip&gt;</code> from
+    the host. It partitions the eMMC over SSH and installs the current build: a 512 MB FAT32 boot
+    partition and an ext4 root. Three target quirks are worth knowing if you modify it — busybox
+    applets are not on root's <code>PATH</code>, dropbear provides no SFTP so files stream through
+    <code>cat</code>, and <code>sudo -S</code> consumes stdin, which means anything piped through
+    sudo has to be written unprivileged instead.</p>
+
+    <div class="note">
+      <span class="tag">Boot script</span>
+      <p><strong>NOTE:</strong> set the MAC addresses with <code>env set -f</code>, not plain
+      <code>setenv</code>. U-Boot pre-sets a random, write-protected <code>ethaddr</code> during
+      network init, so an ordinary <code>setenv</code> fails silently — and U-Boot's device-tree
+      fixup then stamps that random MAC into the kernel's DT, overwriting even a
+      <code>local-mac-address</code> baked into <code>system.dtb</code>. The <code>-f</code> is the
+      whole fix.</p>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section id="rules">
+    <h2><span>House rules</span><span class="idx">09</span></h2>
+    <p class="sub">Each of these cost us something to learn. They are short because the reasons
+    are documented above.</p>
+    <div class="scroll"><table>
+      <tr><th>Rule</th><th>Reason</th></tr>
+      <tr><td>Always power cycle; never <code>reboot</code></td><td>Warm reset hangs before any output. Cold boots are 100 % reliable.</td></tr>
+      <tr><td>Never run <code>saveenv</code></td><td>The U-Boot environment offset falls inside the BOOT.BIN region of QSPI.</td></tr>
+      <tr><td>Never <code>devmem</code> a PL address with the fabric unloaded</td><td>Wedges the AXI bus; recovers only on power cycle.</td></tr>
+      <tr><td>Avoid blind <code>i2c probe</code> sweeps</td><td>The K26 carries IRPS5401 PMICs on that bus.</td></tr>
+      <tr><td>Never power cycle during a flash write</td><td>Leaves QSPI in an unbootable state; recovery is JTAG only.</td></tr>
+    </table></div>
+  </section>
+
+  <p class="foot">Register values here are live reads from a running board rather than quotes
+  from a datasheet, and throughput figures are measured end to end. Corrections belong in
+  <code>ERRATA.md</code> in the hardware repository and in this page together.</p>
+
+  </main>
+</div>
+</div>

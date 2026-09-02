@@ -7,14 +7,46 @@
 	#size-cells = <0>;
 	compatible = "cdns,gem-mdio";
         phy0: phy@0 {
-            compatible = "ti,dp83869", "ethernet-phy-id2000.a0f3";
+            compatible = "ethernet-phy-id2000.a231", "ti,dp83867"; /* ID string MUST be first: fwnode_get_phy_id() reads only the first compatible, and if it does not parse as ethernet-phy-idNNNN.NNNN the node is registered as a plain mdio_device, giving "Could not attach PHY (-19)" */
             reg = <0x0>;
 	    device_type = "ethernet-phy";
+            /* MANDATORY for phy-mode = "rgmii-id": dp83867_of_init() treats
+               both delay properties as required and returns an error if either
+               is absent -- reported only via pr_debug/debug(), which are
+               compiled out, so the failure is completely silent. Without these
+               U-Boot reports "No ethernet found" and Linux reports
+               "Could not attach PHY (-19)", with no other clue.
+
+               Value 8 = 2.25 ns. Chosen on evidence, not by default:
+                 - a tx-delay sweep on this board passes for 4..14 and fails at
+                   0 and 2, so 8 sits mid-window with wide margin
+                 - the DP83867 power-on default RGMIIDCTL is 0x77 (2.00 ns),
+                   so 8 is one 0.25 ns step off TI's own centre
+                 - STRAP_STS2 reads 0x0100 on both PHYs: the board straps no
+                   clock-skew override, so the value must come from the DT
+               Verified by reading RGMIIDCTL back over MDIO: [7:4]=TX, [3:0]=RX. */
+            ti,rx-internal-delay = <0x8>;
+            ti,tx-internal-delay = <0x8>;
+            ti,fifo-depth = <0x1>;
         };
-        phy1: phy@3 { /* PHY for GEM2, using GEM1 MDIO */
-            compatible = "ti,dp83869", "ethernet-phy-id2000.a0f3";
-            reg = <0x3>;
+        phy1: phy@5 { /* PHY for GEM2, using GEM1 MDIO.
+                         Address 0x5 CONFIRMED BY HARDWARE (full 0-31 MDIO scan
+                         found DP83867 id 2000.a231 at addr 0 and addr 5 only).
+                         NOTE: schematic sheet 2/14 annotates "ADDR = 0x1", but the
+                         DP83867 uses 4-level straps: R11 (10k to +1V8_PS) and R12
+                         (2.49k to GND) form a divider on RX1_D0 encoding two address
+                         bits, not one. Trust the scan, not the annotation. */
+            compatible = "ethernet-phy-id2000.a231", "ti,dp83867"; /* ID string MUST be first: fwnode_get_phy_id() reads only the first compatible, and if it does not parse as ethernet-phy-idNNNN.NNNN the node is registered as a plain mdio_device, giving "Could not attach PHY (-19)" */
+            reg = <0x5>;
             device_type = "ethernet-phy";
+            /* Same mandatory delays as phy@0 -- see the comment there.
+               Address 0x5 is now confirmed a third way: STRAP_STS1[4:0] reads
+               back 0x05 from this PHY's own latched strap register (phy@0
+               reads 0x00), matching the MDIO scan. The schematic's
+               "ADDR = 0x1" annotation on sheet 2/14 is simply wrong. */
+            ti,rx-internal-delay = <0x8>;
+            ti,tx-internal-delay = <0x8>;
+            ti,fifo-depth = <0x1>;
         };
     };
 };

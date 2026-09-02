@@ -1,0 +1,11 @@
+[Unit]
+Description=Load TDC bitstream into PL at boot
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/fpgautil -b /lib/firmware/xilinx/base/TDC_64ch_2BRAM.bit.bin
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

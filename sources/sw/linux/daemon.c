@@ -6,7 +6,7 @@
 *   - uio1: axi_bram_ctrl@a0000000 (BRAM 1)
 *   - uio2: axi_bram_ctrl@a0002000 (BRAM 2)
 *   - uio3: gpio@a0010000          (read_busy)
-*   - uio4: gpio@a0002000          (which_bram)
+*   - which_bram: gpio@a0020000  (devices resolved by name at runtime)
 *
 * General description of functionality:
 *   - create socket
@@ -20,6 +20,13 @@
 *       - close fds
 *   - lower PS -> PL busy flag
 *
+* Data is sent over TWO TCP connections, one per BRAM. With the two GEMs
+* LACP-bonded, 802.3ad hashes per flow (use xmit_hash_policy=layer3+4), so a
+* single connection would be pinned to one slave and capped at ~1 Gbps no
+* matter how the switch is configured. Two connections give the hash something
+* to spread, and the mapping is free: the PL already ping-pongs between BRAMs,
+* so BRAM1 -> socket 0 and BRAM2 -> socket 1 alternates the links naturally.
+* Without a bond this is still correct - both flows just share one interface.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,12 +41,12 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>     // CHAR_BIT
+#include "uio_find.h"
 
-#define UIO_INTR    "/dev/uio0"
-#define UIO_BRAM1   "/dev/uio1"
-#define UIO_BRAM2   "/dev/uio2"
-#define UIO_RDBUSY  "/dev/uio3"
-#define UIO_BRAMSEL "/dev/uio4"
+/* uio numbering is not stable (PS axi-pmon devices claim uio0-3 on the Krio
+ * image), so devices are resolved by sysfs name/address at startup. */
+static char UIO_INTR[32], UIO_BRAM1[32], UIO_BRAM2[32];
+static char UIO_RDBUSY[32], UIO_BRAMSEL[32];
 
 void error(const char *msg)
 {
@@ -49,8 +56,8 @@ void error(const char *msg)
 
 int main(int argc, char *argv[])
 {
-    // Networking
-    int sockfd, portno, n;
+    // Networking: one socket per BRAM (see header comment)
+    int sockfd[2], portno, n;
     struct sockaddr_in serv_addr;
     struct hostent *server;
 
@@ -61,8 +68,7 @@ int main(int argc, char *argv[])
     int uio_bramsel_fd;
 
     // Pointers
-    volatile unsigned int *uio_intr_ptr;
-    volatile unsigned int *uio_bram_ptr;
+    volatile uint64_t *uio_bram_ptr;
     volatile unsigned int *uio_rdbusy_ptr;
     volatile unsigned int *uio_bramsel_ptr;
 
@@ -77,17 +83,24 @@ int main(int argc, char *argv[])
     // BRAM selection
     int which_bram;
 
+    // Resolve UIO devices by name (see /sys/class/uio/*/name)
+    if (uio_find("tdc_int",       0,            UIO_INTR,    sizeof UIO_INTR) ||
+        uio_find("axi_bram_ctrl", 0xa0000000UL, UIO_BRAM1,   sizeof UIO_BRAM1) ||
+        uio_find("axi_bram_ctrl", 0xa0002000UL, UIO_BRAM2,   sizeof UIO_BRAM2) ||
+        uio_find("gpio",          0xa0010000UL, UIO_RDBUSY,  sizeof UIO_RDBUSY) ||
+        uio_find("gpio",          0xa0020000UL, UIO_BRAMSEL, sizeof UIO_BRAMSEL)) {
+        fprintf(stderr, "failed to resolve one or more UIO devices\n");
+        exit(1);
+    }
+    printf("intr=%s bram1=%s bram2=%s read_busy=%s which_bram=%s\n",
+           UIO_INTR, UIO_BRAM1, UIO_BRAM2, UIO_RDBUSY, UIO_BRAMSEL);
+
     // Create socket, connect
     if (argc < 3) {
        fprintf(stderr,"usage %s hostname port\n", argv[0]);
        exit(0);
     }
     portno = atoi(argv[2]);
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) 
-        error("ERROR opening socket");
-    else
-        printf("Successfully opened socket\n");
     server = gethostbyname(argv[1]);
     if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
@@ -95,19 +108,23 @@ int main(int argc, char *argv[])
     }
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    bcopy((char *)server->h_addr, 
+    bcopy((char *)server->h_addr,
          (char *)&serv_addr.sin_addr.s_addr,
          server->h_length);
     serv_addr.sin_port = htons(portno);
-    if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
-        error("ERROR connecting");
-    else 
-        printf("Successfully connected to socket\n");
+    for (int i = 0; i < 2; i++) {
+        sockfd[i] = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd[i] < 0)
+            error("ERROR opening socket");
+        if (connect(sockfd[i], (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+            error("ERROR connecting");
+        printf("Connected socket %d (BRAM %d)\n", i, i + 1);
+    }
 
     // Open the TDC interrupt UIO device
     uio_intr_fd = open(UIO_INTR, O_RDWR);
     if (uio_intr_fd < 0) {
-        close(uio_intr_fd);
+        /* note: /dev/uioX is root-only on the stock image — run with sudo */
         error("Failed to open the TDC interrupt UIO device");
     }
     else {
@@ -122,7 +139,6 @@ int main(int argc, char *argv[])
         uint32_t info = 1; 
         ssize_t nb = write(uio_intr_fd, &info, sizeof(info));
         if (nb != (ssize_t)sizeof(info)) {
-            close(uio_intr_fd);
             error("Failed to write to (clear) TDC interrupt UIO device");
         }
         else {
@@ -197,10 +213,13 @@ int main(int argc, char *argv[])
             error("Failed to mmap BRAM");
         }
 
-        // 4. Loop over the BRAM addresses
+        // 4. Loop over the BRAM addresses: print and send over the socket
         for (int i=0; i<250; i+=1) {
             uint64_t bram_data = uio_bram_ptr[i];
             printf("%#018"PRIx64"\n", bram_data);
+            n = write(sockfd[which_bram == 1 ? 0 : 1], &bram_data, sizeof(bram_data));
+            if (n < 0)
+                error("ERROR writing to socket");
         }
 
         // Lower the read_busy flag
@@ -210,9 +229,9 @@ int main(int argc, char *argv[])
         munmap(uio_rdbusy_ptr, uio_rdbusy_len);
         close(uio_rdbusy_fd);
 
-        // Close the other file descriptors
+        // Close the BRAM file descriptor (bramsel already closed above)
+        munmap((void *)uio_bram_ptr, uio_bram_len);
         close(uio_bram_fd);
-        close(uio_bramsel_fd);
     }
     
 }
